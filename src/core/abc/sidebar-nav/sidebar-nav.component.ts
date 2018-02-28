@@ -1,7 +1,9 @@
-import { Component, ElementRef, Renderer2, Inject, OnInit, OnDestroy, HostListener, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, ElementRef, Renderer2, Inject, OnInit, OnDestroy, HostListener, ChangeDetectionStrategy, ChangeDetectorRef, Input } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
 import { Subscription } from 'rxjs/Subscription';
+import { debounceTime } from 'rxjs/operators';
+import { FromEventObservable } from 'rxjs/observable/FromEventObservable';
 import { MenuService, Menu, SettingsService } from '@delon/theme';
 
 const SHOWCLS = 'nav-floating-show';
@@ -20,6 +22,8 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
     private bodyEl: HTMLBodyElement;
     list: Menu[] = [];
     private change$: Subscription;
+
+    @Input() autoCloseUnderPad = true;
 
     constructor(
         private menuSrv: MenuService,
@@ -40,6 +44,7 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
             this.list = res;
             this.cd.detectChanges();
         });
+        this.installUnderPad();
     }
 
     private floatingAreaClickHandle(e: MouseEvent) {
@@ -115,6 +120,7 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
         if (linkNode.nodeName !== 'A') {
             return;
         }
+        this.genFloatingContainer();
         const subNode = this.genSubNode(linkNode as HTMLLinkElement, item);
         this.hideAll();
         subNode.classList.add(SHOWCLS);
@@ -141,5 +147,26 @@ export class SidebarNavComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         if (this.change$) this.change$.unsubscribe();
+        if (this.route$) this.route$.unsubscribe();
     }
+
+    // region: Under pad
+
+    private route$: Subscription;
+    private installUnderPad() {
+        if (!this.autoCloseUnderPad) return;
+        this.route$ = this.router.events.subscribe(s => {
+            if (s instanceof NavigationEnd) this.underPad();
+        });
+        this.underPad();
+    }
+
+    private underPad() {
+        if (!this.autoCloseUnderPad) return;
+        if (window.innerWidth < 992 && !this.settings.layout.collapsed) {
+            this.settings.setLayout('collapsed', true);
+        }
+    }
+
+    // endregion
 }

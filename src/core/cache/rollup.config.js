@@ -19,19 +19,19 @@ const globals = {
     'rxjs/observable/of': 'Rx.Observable',
     'rxjs/observable/fromEvent': 'Rx.Observable',
     'rxjs/observable/FromEventObservable': 'Rx.Observable',
-    'rxjs/observable/ErrorObservable': 'Rx.Observable',
-
-    '@delon/theme': 'alain.theme',
-    '@delon/abc': 'alain.abc'
+    'rxjs/observable/ErrorObservable': 'Rx.Observable'
 };
 
 module.exports = {
-    sourcemap: true,
     rollup: require('rollup'),
     context: 'this',
-    name: 'alain.cache',
-    output: 'cache.umd.js',
-    format: 'umd',
+    output: {
+        file: 'cache.umd.js',
+        name: 'alain.cache',
+        format: 'umd',
+        sourcemap: true,
+        globals: globals
+    },
     plugins: [
         replace({ "import * as moment": "import moment" }),
         resolve({
@@ -39,6 +39,5 @@ module.exports = {
             main: true
         })
     ],
-    external: Object.keys(globals),
-    globals: globals
+    external: Object.keys(globals)
 };

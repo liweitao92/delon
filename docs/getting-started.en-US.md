@@ -19,26 +19,28 @@ ng-alain is a production-ready solution for admin interfaces based on ng-zorro-a
 | @delon/acl | [![NPM version](https://img.shields.io/npm/v/@delon/acl.svg)](https://www.npmjs.com/package/@delon/acl) | [![NPM version](https://img.shields.io/npm/v/@delon/acl/next.svg)](https://www.npmjs.com/package/@delon/acl) |
 | @delon/auth | [![NPM version](https://img.shields.io/npm/v/@delon/auth.svg)](https://www.npmjs.com/package/@delon/auth) | [![NPM version](https://img.shields.io/npm/v/@delon/auth/next.svg)](https://www.npmjs.com/package/@delon/auth) |
 | @delon/mock | [![NPM version](https://img.shields.io/npm/v/@delon/mock.svg)](https://www.npmjs.com/package/@delon/mock) | [![NPM version](https://img.shields.io/npm/v/@delon/mock/next.svg)](https://www.npmjs.com/package/@delon/mock) |
-| @delon/cache | - | [![NPM version](https://img.shields.io/npm/v/@delon/cache/next.svg)](https://www.npmjs.com/package/@delon/cache) |
+| @delon/cache | [![NPM version](https://img.shields.io/npm/v/@delon/cache.svg)](https://www.npmjs.com/package/@delon/cache) | [![NPM version](https://img.shields.io/npm/v/@delon/cache/next.svg)](https://www.npmjs.com/package/@delon/cache) |
+| @delon/cli | [![NPM version](https://img.shields.io/npm/v/@delon/cli.svg)](https://www.npmjs.com/package/@delon/cli) | [![NPM version](https://img.shields.io/npm/v/@delon/cli/next.svg)](https://www.npmjs.com/package/@delon/cli) |
 
 ## Installation
 
 There are two ways to install:
 
+### Use the Command Line
+
+Depend on `@delon/cli`, [How install?](http://ng-alain.com/docs/cli)
+
+```bash
+ng new -c=@delon/cli my-app
+```
+
 ### Clone the Git Repository
 
 ```bash
-# Blank branch (just only basic)
-git clone -b blank --depth 1 https://github.com/cipchk/ng-alain.git my-project
-# Or Master
 $ git clone --depth=1 https://github.com/cipchk/ng-alain.git my-project
 
 $ cd my-project
 ```
-
-### Download the Package
-
-Download [https://github.com/cipchk/ng-alain/archive/master.zip](https://github.com/cipchk/ng-alain/archive/master.zip), and un-archive.
 
 ## Scaffolding
 

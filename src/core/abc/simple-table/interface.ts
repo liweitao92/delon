@@ -1,5 +1,5 @@
+import { SimpleTableComponent } from './simple-table.component';
 import { ElementRef, TemplateRef } from '@angular/core';
-import { ACLCanType } from '@delon/acl';
 
 export type CompareFn = ((a: any, b: any) => number);
 
@@ -28,11 +28,12 @@ export interface SimpleTableColumn {
      * - `checkbox` 多选
      * - `radio` 单选（待实现，跟踪 [#770](https://github.com/NG-ZORRO/ng-zorro-antd/issues/770)）
      * - `img` 图片且居中(若 `className` 存在则优先)
+     * - `number` 数字且居右(若 `className` 存在则优先)
      * - `currency` 货币且居右(若 `className` 存在则优先)
      * - `date` 日期格式且居中(若 `className` 存在则优先)
      * - `yn` 将`boolean`类型徽章化 [document](http://ng-alain.com/docs/data-render#yn)
      */
-    type?: 'checkbox' | 'radio' | 'img' | 'currency' | 'date' | 'yn';
+    type?: 'checkbox' | 'radio' | 'img' | 'currency' | 'number' | 'date' | 'yn';
     /**
      * 表格标题
      */
@@ -59,7 +60,7 @@ export interface SimpleTableColumn {
     width?: string;
     /**
      * 排序的默认受控属性
-     * - 只支持同时对一列进行排序
+     * - 只支持同时对一列进行排序，除非指定 `multiSort`，建议后端支持时使用
      * - 保证只有一列的 `sort` 值，否则自动获取所有列的第一个值
      */
     sort?: 'ascend' | 'descend';
@@ -143,6 +144,10 @@ export interface SimpleTableColumn {
      */
     colSpan?: number;
     /**
+     * 数字格式，`type=number` 有效
+     */
+    numberDigits?: string;
+    /**
      * 日期格式，`type=date` 有效，（默认：YYYY-MM-DD HH:mm）
      */
     dateFormat?: string;
@@ -163,7 +168,7 @@ export interface SimpleTableColumn {
      */
     exported?: boolean;
     /** 权限，等同 `can()` 参数值 */
-    acl?: ACLCanType;
+    acl?: any;
 
     [key: string]: any;
 }
@@ -181,7 +186,7 @@ export interface SimpleTableSelection {
      */
     select: Function;
     /** 权限，等同 `can()` 参数值 */
-    acl?: ACLCanType;
+    acl?: any;
 }
 
 /**
@@ -201,7 +206,7 @@ export interface SimpleTableFilter {
      */
     checked?: boolean;
     /** 权限，等同 `can()` 参数值 */
-    acl?: ACLCanType;
+    acl?: any;
 
     [key: string]: any;
 }
@@ -232,10 +237,11 @@ export interface SimpleTableButton {
     type?: 'none' | 'del' | 'modal' | 'static';
     /**
      * 点击回调
-     * - `type=对话框` 只会在 `确认` 时触发
-     * - `type=对话框` 时才会返回 `modal` 所携带参数
+     * - Function
+     *  - `type=modal` 只会在 `确认` 时触发且 `modal` 参数有效
+     * - reload：重新加载表格数据
      */
-    click?: (record: any, modal?: any) => void;
+    click?: 'reload' | ((record: any, modal?: any, instance?: SimpleTableComponent) => void);
     /**
      * 是否需要气泡确认框
      */
@@ -253,6 +259,10 @@ export interface SimpleTableButton {
      */
     params?: (record: any) => Object;
     /**
+     * 指定模态框目标组件的接收参数名，默认：`record`
+     */
+    paramName?: string;
+    /**
      * 对话框大小，默认：`lg`
      */
     size?: 'sm' | 'lg' | '' | number;
@@ -266,7 +276,7 @@ export interface SimpleTableButton {
      */
     children?: SimpleTableButton[];
     /** 权限，等同 `can()` 参数值 */
-    acl?: ACLCanType;
+    acl?: any;
 
     [key: string]: any;
 }
@@ -291,6 +301,11 @@ export interface SimpleTableChange {
      * 数据总量
      */
     total: number;
+}
+
+export interface ResReNameType {
+    total?: string | string[];
+    list?: string | string[];
 }
 
 export interface STExportOptions {

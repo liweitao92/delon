@@ -15,24 +15,24 @@ const globals = {
     'rxjs/observable/of': 'Rx.Observable',
     'rxjs/observable/fromEvent': 'Rx.Observable',
     'rxjs/observable/FromEventObservable': 'Rx.Observable',
-    'rxjs/observable/ErrorObservable': 'Rx.Observable',
-
-    '@delon/theme': 'alain.theme'
+    'rxjs/observable/ErrorObservable': 'Rx.Observable'
 };
 
 module.exports = {
-    sourcemap: true,
     rollup: require('rollup'),
     context: 'this',
-    name: 'alain.acl',
-    output: 'acl.umd.js',
-    format: 'umd',
+    output: {
+        file: 'acl.umd.js',
+        name: 'alain.acl',
+        format: 'umd',
+        sourcemap: true,
+        globals: globals
+    },
     plugins: [
         resolve({
             jsnext: true,
             main: true
         })
     ],
-    external: Object.keys(globals),
-    globals: globals
+    external: Object.keys(globals)
 };

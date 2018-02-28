@@ -12,24 +12,28 @@ const globals = {
     'rxjs/Observer': 'Rx',
     'rxjs/BehaviorSubject': 'Rx',
     'rxjs/operators': 'Rx.Observable.prototype',
+    'rxjs/observable/of': 'Rx.Observable',
+    'rxjs/observable/throw': 'Rx.Observable',
     'rxjs/observable/fromEvent': 'Rx.Observable',
     'rxjs/observable/FromEventObservable': 'Rx.Observable',
     'rxjs/observable/ErrorObservable': 'Rx.Observable'
 };
 
 module.exports = {
-    sourcemap: true,
     rollup: require('rollup'),
     context: 'this',
-    name: 'alain.auth',
-    output: 'auth.umd.js',
-    format: 'umd',
+    output: {
+        file: 'auth.umd.js',
+        name: 'alain.auth',
+        format: 'umd',
+        sourcemap: true,
+        globals: globals
+    },
     plugins: [
         resolve({
             jsnext: true,
             main: true
         })
     ],
-    external: Object.keys(globals),
-    globals: globals
+    external: Object.keys(globals)
 };

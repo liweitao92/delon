@@ -50,7 +50,7 @@
                         </ul>
                         <ul nz-menu *ngIf="!c.filterMultiple">
                             <li nz-menu-item *ngFor="let filter of c.filters">
-                                <label nz-radio-extra [ngModel]="filter.checked" (ngModelChange)="filterRadio(c, filter, $event)">
+                                <label nz-radio [ngModel]="filter.checked" (ngModelChange)="filterRadio(c, filter, $event)">
                                     <span>{{filter.text}}</span>
                                 </label>
                             </li>
@@ -78,7 +78,7 @@
                             <label nz-checkbox [nzDisabled]="i.disabled" [(ngModel)]="i.checked" (ngModelChange)="_checkSelection(i)"></label>
                         </ng-container>
                         <ng-container *ngSwitchCase="'radio'">
-                            <label nz-radio-extra [nzDisabled]="i.disabled" [ngModel]="i.checked" (ngModelChange)="_refRadio(index, $event)"></label>
+                            <label nz-radio [nzDisabled]="i.disabled" [ngModel]="i.checked" (ngModelChange)="_refRadio(index, $event)"></label>
                         </ng-container>
                         <span *ngSwitchDefault [innerHTML]="_get(i, c)"></span>
                     </ng-container>

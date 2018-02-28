@@ -6,6 +6,12 @@ import { MenuService, SettingsService, Menu } from '@delon/theme';
   template: `
 <div class="wrapper">
     <div class="header">
+        <div class="logo">
+            <a [routerLink]="['/']">
+                <img class="expanded" src="./assets/img/logo-full.svg" alt="{{settings.app.name}}" style="max-height:40px;" />
+                <img class="collapsed" src="./assets/img/logo.svg" alt="{{settings.app.name}}" style="max-height:30px;" />
+            </a>
+        </div>
         <div class="item" (click)="toggleCollapsedSideabar()">
             <i class="anticon anticon-menu-{{settings.layout.collapsed ? 'unfold' : 'fold'}}"></i>
         </div>
@@ -16,7 +22,7 @@ import { MenuService, SettingsService, Menu } from '@delon/theme';
         </div>
     </div>
     <section class="content">
-        <reuse-tab></reuse-tab>
+        <reuse-tab debug></reuse-tab>
         <router-outlet></router-outlet>
     </section>
 </div>

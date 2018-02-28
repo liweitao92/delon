@@ -3,6 +3,10 @@ import { Injectable } from '@angular/core';
 @Injectable()
 export class SimpleTableConfig {
     /**
+     * 起始页码，默认为：`1`
+     */
+    pi?: number;
+    /**
      * 每页数量，当设置为 `0` 表示不分页，默认：`10`
      */
     ps?: number;
@@ -58,4 +62,8 @@ export class SimpleTableConfig {
      * 重命名排序值，`columns` 的重命名高于属性
      */
     sortReName?: { ascend?: string, descend?: string };
+    /**
+     * 指定模态框目标组件的接收参数名，默认：`record`
+     */
+    modalParamsName?: string;
 }

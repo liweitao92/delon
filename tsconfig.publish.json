@@ -38,6 +38,7 @@
       "./.ng_build/**/*.spec.ts"
     ],
     "angularCompilerOptions": {
+      "preserveWhiteSpace": false,
       "skipTemplateCodegen": true,
       "strictMetadataEmit": false,
       "genDir": "./.ng_compiled"

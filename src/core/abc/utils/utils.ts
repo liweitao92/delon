@@ -2,8 +2,11 @@ import * as moment from 'moment';
 
 /**
  * 转化成RMB元字符串
+ * @param digits 当数字类型时，允许指定小数点后数字的个数，默认2位小数
  */
-export function yuan(value: any): string {
+export function yuan(value: any, digits: number = 2): string {
+    if (typeof value === 'number')
+        value = value.toFixed(digits);
     return `&yen ${value}`;
 }
 
@@ -85,4 +88,9 @@ export function deepGet(obj: any, path: string[], defaultValue: any) {
         return typeof checkObj === 'undefined' ? defaultValue : checkObj;
     }
     return path.reduce((o, k) => (o || {})[k], obj) || defaultValue;
+}
+
+export function deepCopy(obj: any) {
+    // BAD: a temporary solution
+    return JSON.parse(JSON.stringify(obj));
 }

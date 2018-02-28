@@ -1,13 +1,14 @@
-import { Component, Input, ElementRef, TemplateRef, ContentChild, OnInit, AfterViewInit, Inject, Renderer2 } from '@angular/core';
+import { Component, Input, ElementRef, TemplateRef, ContentChild, OnInit, AfterViewInit, Inject, Renderer2, Optional } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { MenuService, ALAIN_I18N_TOKEN, AlainI18NService } from '@delon/theme';
+import { ProHeaderConfig } from './pro-header.config';
 
 @Component({
     selector: 'pro-header',
     template: `
     <ng-container *ngIf="!breadcrumb; else breadcrumb">
-        <nz-breadcrumb>
+        <nz-breadcrumb *ngIf="paths && paths.length > 0">
             <nz-breadcrumb-item *ngFor="let i of paths">
                 <ng-container *ngIf="i.link"><a [routerLink]="i.link">{{i.title}}</a></ng-container>
                 <ng-container *ngIf="!i.link">{{i.title}}</ng-container>
@@ -65,26 +66,29 @@ export class ProHeaderComponent implements OnInit {
     // endregion
 
     constructor(
+        private cog: ProHeaderConfig,
         private route: Router,
-        private menuSrv: MenuService,
-        @Inject(ALAIN_I18N_TOKEN) private i18nSrv: AlainI18NService,
+        @Optional() private menuSrv: MenuService,
+        @Optional() @Inject(ALAIN_I18N_TOKEN) private i18nSrv: AlainI18NService,
         private el: ElementRef, private renderer: Renderer2) {}
 
     private genBreadcrumb() {
-        if (this.breadcrumb || !this.autoBreadcrumb) return;
+        if (this.breadcrumb || !this.autoBreadcrumb || !this.menuSrv) return;
         const menus = this.menuSrv.getPathByUrl(this.route.url);
         if (menus.length <= 0) return ;
         const paths: any[] = [];
         menus.forEach(item => {
             let title;
-            if (item.translate) title = this.i18nSrv.fanyi(item.translate);
+            if (item.translate && this.i18nSrv) title = this.i18nSrv.fanyi(item.translate);
             paths.push({ title: title || item.text, link: item.link && [ item.link ] });
         });
         // add home
-        paths.splice(0, 0, {
-            title: this.i18nSrv.fanyi('home') || 'Home',
-            link: [ '/' ]
-        });
+        if (this.cog.home) {
+            paths.splice(0, 0, {
+                title: (this.cog.home_i18n && this.i18nSrv && this.i18nSrv.fanyi(this.cog.home_i18n)) || this.cog.home,
+                link: [ this.cog.home_link ]
+            });
+        }
         this.paths = paths;
     }
 

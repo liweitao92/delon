@@ -1,4 +1,5 @@
 import { Component, Inject, Input, Output, OnDestroy, OnInit, OnChanges, SimpleChanges, EventEmitter, Renderer2, ElementRef, TemplateRef, SimpleChange, QueryList, ViewChildren, AfterViewInit, ContentChildren, ContentChild, Optional } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { _HttpClient, CNCurrencyPipe, MomentDatePipe, YNPipe, ModalHelper, ALAIN_I18N_TOKEN, AlainI18NService } from '@delon/theme';
 import { ACLService } from '@delon/acl';
 import { Observable } from 'rxjs/Observable';
@@ -6,9 +7,9 @@ import { Subscription } from 'rxjs/Subscription';
 import { tap, map } from 'rxjs/operators';
 import { of } from 'rxjs/observable/of';
 import { coerceBooleanProperty, coerceNumberProperty } from '@angular/cdk/coercion';
-import { SimpleTableColumn, SimpleTableChange, CompareFn, SimpleTableSelection, SimpleTableFilter, SimpleTableData, SimpleTableButton, STExportOptions } from './interface';
+import { SimpleTableColumn, SimpleTableChange, CompareFn, SimpleTableSelection, SimpleTableFilter, SimpleTableData, SimpleTableButton, STExportOptions, ResReNameType } from './interface';
 import { SimpleTableConfig } from './simple-table.config';
-import { deepGet } from '../utils/utils';
+import { deepGet, deepCopy } from '../utils/utils';
 import { SimpleTableRowDirective } from './simple-table-row.directive';
 import { SimpleTableExport } from './simple-table-export';
 
@@ -16,7 +17,7 @@ import { SimpleTableExport } from './simple-table-export';
     selector: 'simple-table',
     templateUrl: './simple-table.component.html',
     styleUrls: [ './simple-table.less' ],
-    providers: [ SimpleTableExport, CNCurrencyPipe, MomentDatePipe, YNPipe ]
+    providers: [ SimpleTableExport, CNCurrencyPipe, MomentDatePipe, YNPipe, DecimalPipe ]
 })
 export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
 
@@ -28,12 +29,9 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
     _classMap: string[] = [];
     _allChecked = false;
     _indeterminate = false;
-    _sortMap: { [key: number ]: any } = {};
-    _sortColumn: SimpleTableColumn = null;
-    _sortOrder: string;
-    _sortIndex: number;
     _footer = false;
     _columns: SimpleTableColumn[] = [];
+    _resRN: ResReNameType = { total: ['total'], list: ['list'] };
 
     // region: fields
 
@@ -66,7 +64,7 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
      * 重命名返回参数 `total`、`list`
      * - `{ total: 'Total' }` => Total 会被当作 `total`
      */
-    @Input() resReName: { total?: string | string[], list?: string | string[] } = { total: ['total'], list: ['list'] };
+    @Input() resReName: ResReNameType;
     /** 列描述  */
     @Input() columns: SimpleTableColumn[] = [];
     /** 每页数量，当设置为 `0` 表示不分页，默认：`10` */
@@ -156,6 +154,13 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
     private _toTopOffset = 0;
     /** 重命名排序值，`columns` 的重命名高于属性 */
     @Input() sortReName: { ascend?: string, descend?: string };
+    /** 是否多排序，建议后端支持时使用，默认：`false` */
+    @Input()
+    get multiSort() { return this._multiSort; }
+    set multiSort(value: any) {
+        this._multiSort = coerceBooleanProperty(value);
+    }
+    private _multiSort = false;
     /** 数据处理前回调 */
     @Input() preDataChange: (data: SimpleTableData[]) => SimpleTableData[];
     /** 额外 `body` 内容 */
@@ -176,7 +181,7 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
     // endregion
 
     constructor(
-        defConfig: SimpleTableConfig,
+        private defConfig: SimpleTableConfig,
         private _http: _HttpClient,
         private el: ElementRef,
         private renderer: Renderer2,
@@ -186,9 +191,11 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
         private modal: ModalHelper,
         private currenty: CNCurrencyPipe,
         private date: MomentDatePipe,
-        private yn: YNPipe
+        private yn: YNPipe,
+        private number: DecimalPipe
     ) {
-        Object.assign(this, defConfig);
+        Object.assign(this, deepCopy(defConfig));
+        this.updateResName();
     }
 
     // region: data
@@ -202,14 +209,21 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
             body: this.reqBody,
             headers: this.reqHeaders
         }).pipe(map((res: any) => {
-            const ret = deepGet(res, this.resReName.list as string[], null);
+            const ret = deepGet(res, this._resRN.list as string[], null);
             if (typeof ret === 'undefined') {
-                console.warn(`results muse contain '${(this.resReName.list as string[]).join('.')}' attribute.`);
+                console.warn(`results muse contain '${(this._resRN.list as string[]).join('.')}' attribute.`);
                 return;
             }
             if (!Array.isArray(ret)) {
-                console.warn(`'${(this.resReName.list as string[]).join('.')}' muse be array type.`);
+                console.warn(`'${(this._resRN.list as string[]).join('.')}' muse be array type.`);
                 return;
+            }
+            // total
+            const retTotal = this._resRN.total && deepGet(res, this._resRN.total as string[], null);
+            if (typeof retTotal === 'undefined') {
+                if (this._resRN.total) console.warn(`results muse contain '${(this._resRN.total as string[]).join('.')}' attribute.`);
+            } else {
+                this.total = +retTotal;
             }
             return <any[]>ret;
         }));
@@ -218,6 +232,11 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
     load(pi = 1) {
         this.pi = pi;
         this._change('pi');
+    }
+
+    reset() {
+        this.extraParams = null;
+        this.load(1);
     }
 
     _change(type: 'pi' | 'ps') {
@@ -236,17 +255,7 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
         if (!this._isAjax) return;
         this.loading = true;
         if (forceRefresh === true) this.pi = 1;
-        this.getAjaxData().subscribe((res: any) => {
-            this._subscribeData(res);
-
-            // total
-            const retTotal = this.resReName.total && deepGet(res, this.resReName.total as string[], null);
-            if (typeof retTotal === 'undefined') {
-                if (this.resReName.total) console.warn(`results muse contain '${(this.resReName.total as string[]).join('.')}' attribute.`);
-                return;
-            }
-            this.total = +retTotal;
-        }, err => {
+        this.getAjaxData().subscribe((res: any) => this._subscribeData(res), err => {
             this.loading = false;
             this.reqError.emit(err);
         });
@@ -282,7 +291,7 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
         }
         this.total = this.total <= 0 ? data.length : this.total;
         this._isPagination = this.ps > 0 && this.total > this.ps;
-        this._subscribeData(data.slice((this.pi - 1) * this.ps, this.pi * this.ps));
+        this._subscribeData(this._isPagination ? data.slice((this.pi - 1) * this.ps, this.pi * this.ps) : data);
     }
 
     _toTop() {
@@ -304,6 +313,8 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
         switch (col.type) {
             case 'img':
                 return `<img src="${ret}" class="img">`;
+            case 'number':
+                return this.number.transform(ret, col.numberDigits);
             case 'currency':
                 return this.currenty.transform(ret);
             case 'date':
@@ -353,13 +364,28 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
 
     // region: sort
 
+    _sortMap: { [key: number ]: any } = {};
+    _sortColumn: SimpleTableColumn = null;
+    _sortOrder: string;
+    _sortIndex: number;
+
     private getReqSortMap(): { [key: string]: string } {
         const ret: { [ key: string]: string } = {};
         if (!this._sortOrder) return ret;
 
-        const mapData = this._sortMap[this._sortIndex];
-        ret[mapData.key] =
-            (this._sortColumn.sortReName || this.sortReName || {})[mapData.v] || mapData.v;
+        if (this.multiSort) {
+            Object.keys(this._sortMap).forEach(key => {
+                const item = this._sortMap[key];
+                if (item.v) {
+                    ret[item.key] = (item.column.sortReName || this.sortReName || {})[item.v] || item.v;
+                }
+            });
+        } else {
+            const mapData = this._sortMap[this._sortIndex];
+            ret[mapData.key] =
+                (this._sortColumn.sortReName || this.sortReName || {})[mapData.v] || mapData.v;
+        }
+        console.log(ret);
         return ret;
     }
 
@@ -391,7 +417,11 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
         this._sortColumn = this._columns[index];
         this._sortOrder = value;
         this._sortIndex = index;
-        Object.keys(this._sortMap).forEach(key => this._sortMap[key].v = +key === index ? value : null);
+        if (this.multiSort) {
+            this._sortMap[index].v = value;
+        } else {
+            Object.keys(this._sortMap).forEach(key => this._sortMap[key].v = +key === index ? value : null);
+        }
         this._genAjax(true);
         this._genData(true);
         this.sortChange.emit({ value, map: this.getReqSortMap(), column: this._sortColumn });
@@ -481,14 +511,32 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
 
     btnClick(record: any, btn: SimpleTableButton) {
         if (btn.type === 'modal' || btn.type === 'static') {
-            this.modal[btn.type === 'modal' ? 'open' : 'static'](btn.component, Object.assign({
-                record
-            }, btn.params && btn.params(record)), btn.size, btn.modalOptions).subscribe(res => {
-                if (btn.click) btn.click(record, res);
+            const obj = {};
+            obj[btn.paramName || this.defConfig.modalParamsName || 'record'] = record;
+            this.modal[btn.type === 'modal' ? 'open' : 'static'](
+                btn.component,
+                Object.assign(obj, btn.params && btn.params(record)),
+                btn.size,
+                btn.modalOptions
+            ).subscribe(res => {
+                if (btn.click) this.btnCallback(record, btn, res);
             });
             return;
         }
-        if (btn.click) btn.click(record);
+        this.btnCallback(record, btn);
+    }
+
+    private btnCallback(record: any, btn: SimpleTableButton, modal?: any) {
+        if (!btn.click) return;
+        if (typeof btn.click === 'string') {
+            switch (btn.click) {
+                case 'reload':
+                    this.load();
+                    break;
+            }
+        } else {
+            btn.click(record, modal, this);
+        }
     }
 
     btnText(record: any, btn: SimpleTableButton) {
@@ -533,12 +581,18 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
         if (col) col.__render = row.templateRef;
     }
 
-    private updateStatus() {
-        if (this.data && this.url) throw new Error(`data & url property muse be either-or`);
+    private setClass() {
+        this._classMap.forEach(cls => this.renderer.removeClass(this.el.nativeElement, cls));
 
-        this.setClass();
+        this._classMap = [];
+        if (this.pagePlacement)
+            this._classMap.push('page-' + this.pagePlacement);
 
-        // columns
+        this._classMap.forEach(cls => this.renderer.addClass(this.el.nativeElement, cls));
+    }
+
+    private updateColumns() {
+        this._columns = [];
         if (!this.columns || this.columns.length === 0) throw new Error(`the columns property muse be define!`);
         if (this._columns.length === 0) {
             let checkboxCount = 0;
@@ -569,6 +623,7 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
                     item.className = {
                         // 'checkbox': 'text-center',
                         // 'radio': 'text-center',
+                        'number': 'text-right',
                         'currency': 'text-right',
                         'date': 'text-center'
                     }[item.type];
@@ -578,7 +633,11 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
 
                 // sorter
                 if (item.sorter) {
-                    sortMap[idx] = { v: item.sort, key: item.sortKey || item.indexKey };
+                    sortMap[idx] = {
+                        v: item.sort,
+                        key: item.sortKey || item.indexKey,
+                        column: item
+                    };
                     if (item.sort && !this._sortColumn) {
                         this._sortColumn = item;
                         this._sortOrder = item.sort;
@@ -635,43 +694,39 @@ export class SimpleTableComponent implements OnInit, OnChanges, AfterViewInit, O
             if (radioCount > 1) throw new Error(`just only one column radio`);
             this._sortMap = sortMap;
         }
-        // reqReName
-        if (this.reqReName) {
-        }
-        // resReName
-        if (this.resReName) {
-            if (this.resReName.list)
-                if (!Array.isArray(this.resReName.list)) this.resReName.list = this.resReName.list.split('.');
-            else
-                this.resReName.list = ['list'];
-
-            if (this.resReName.total)
-                if (!Array.isArray(this.resReName.total)) this.resReName.total = this.resReName.total.split('.');
-            else
-                this.resReName.total = ['total'];
-        } else {
-            this.resReName = { total: ['total'], list: ['list'] };
-        }
     }
 
-    private setClass() {
-        this._classMap.forEach(cls => this.renderer.removeClass(this.el.nativeElement, cls));
+    private updateResName() {
+        let ret: ResReNameType = {};
+        const cur = this.resReName;
+        if (cur) {
+            if (cur.list)
+                if (!Array.isArray(cur.list)) ret.list = cur.list.split('.');
+            else
+                ret.list = ['list'];
 
-        this._classMap = [];
-        if (this.pagePlacement)
-            this._classMap.push('page-' + this.pagePlacement);
-
-        this._classMap.forEach(cls => this.renderer.addClass(this.el.nativeElement, cls));
+            if (cur.total)
+                if (!Array.isArray(cur.total)) ret.total = cur.total.split('.');
+            else
+                ret.total = ['total'];
+        } else {
+            ret = { total: ['total'], list: ['list'] };
+        }
+        this._resRN = ret;
     }
 
     ngOnChanges(changes: { [P in keyof this]?: SimpleChange } & SimpleChanges): void {
-        if (changes.columns) this._columns = [];
 
-        this.updateStatus();
+        if (this.data && this.url) throw new Error(`data & url property muse be either-or`);
+
+        if (changes.columns) this.updateColumns();
+        if (changes.resReName) this.updateResName();
 
         if (changes.data || changes.url) {
             this.processData();
         }
+
+        this.setClass();
     }
 
     ngOnDestroy(): void {

@@ -19,26 +19,28 @@ ng-alain 是一个基于 ng-zorro-antd 的企业级中后台前端脚手架，�
 | @delon/acl | [![NPM version](https://img.shields.io/npm/v/@delon/acl.svg)](https://www.npmjs.com/package/@delon/acl) | [![NPM version](https://img.shields.io/npm/v/@delon/acl/next.svg)](https://www.npmjs.com/package/@delon/acl) |
 | @delon/auth | [![NPM version](https://img.shields.io/npm/v/@delon/auth.svg)](https://www.npmjs.com/package/@delon/auth) | [![NPM version](https://img.shields.io/npm/v/@delon/auth/next.svg)](https://www.npmjs.com/package/@delon/auth) |
 | @delon/mock | [![NPM version](https://img.shields.io/npm/v/@delon/mock.svg)](https://www.npmjs.com/package/@delon/mock) | [![NPM version](https://img.shields.io/npm/v/@delon/mock/next.svg)](https://www.npmjs.com/package/@delon/mock) |
-| @delon/cache | - | [![NPM version](https://img.shields.io/npm/v/@delon/cache/next.svg)](https://www.npmjs.com/package/@delon/cache) |
+| @delon/cache | [![NPM version](https://img.shields.io/npm/v/@delon/cache.svg)](https://www.npmjs.com/package/@delon/cache) | [![NPM version](https://img.shields.io/npm/v/@delon/cache/next.svg)](https://www.npmjs.com/package/@delon/cache) |
+| @delon/cli | [![NPM version](https://img.shields.io/npm/v/@delon/cli.svg)](https://www.npmjs.com/package/@delon/cli) | [![NPM version](https://img.shields.io/npm/v/@delon/cli/next.svg)](https://www.npmjs.com/package/@delon/cli) |
 
 ## 安装
 
 有二种方式进行安装：
 
+### 命令行工具
+
+需要依赖于 `@delon/cli`，[如何安装？](http://ng-alain.com/docs/cli)
+
+```bash
+ng new -c=@delon/cli my-app
+```
+
 ### 直接 clone git 仓库
 
 ```bash
-# 基础版（只包括最基本功能）
-git clone -b blank --depth 1 https://github.com/cipchk/ng-alain.git my-project
-# 或完整版（含所有示例）
 $ git clone --depth=1 https://github.com/cipchk/ng-alain.git my-project
 
 $ cd my-project
 ```
-
-### 下载压缩包
-
-点击 [https://github.com/cipchk/ng-alain/archive/master.zip](https://github.com/cipchk/ng-alain/archive/master.zip) 下载到本地后解压。
 
 ## 目录结构
 

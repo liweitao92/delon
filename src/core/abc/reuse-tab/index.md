@@ -12,9 +12,9 @@ module: AdReuseTabModule
 
 ## 匹配模式
 
-在项目的任何位置（建议：`startup.service.ts`）注入 `ReuseTabService` 类，并设置 `mode` 属性，其值包括：
+在项目的任何位置（建议：`startup.service.ts`）注入 `ReuseTabService` 类，并设置 `mode` 属性，或通过 `<reuse-tab [mode]="0"></reuse-tab>` 重新设置值，包括：
 
-**1、（推荐，默认值）Menu**
+**0、（推荐，默认值）Menu**
 
 按菜单 `Menu` 配置。
 
@@ -31,7 +31,7 @@ module: AdReuseTabModule
 { text:'Dashboard', reuse: false }
 ```
 
-**2、（推荐）MenuForce**
+**1、（推荐）MenuForce**
 
 按菜单 `Menu` 强制配置。
 
@@ -48,7 +48,7 @@ module: AdReuseTabModule
 { text:'Dashboard', reuse: false }
 ```
 
-**3、URL**
+**2、URL**
 
 对所有路由有效，可以配合 `excludes` 过滤无须复用路由。
 
@@ -79,13 +79,26 @@ export class DemoReuseTabEditComponent implements OnInit {
 }
 ```
 
+## 生命周期
+
+路由复用过程中不会触发现有任何生命周期钩子（例如：`ngOnInit` 等），但是往往需要在复用过程中刷新数据，因此 `reuse-tab` 提供了两种新生命周期钩子用于临时解决这类问题。
+
+**_onReuseInit()**
+
+当目前路由在复用过程中时触发。
+
+**_onReuseDestroy()**
+
+当目前路由允许复用且进入新路由时触发。
+
+以 `_` 开头希望未来 Angular 会有相应的钩子用于快速替换。
+
 ## 常见问题
 
 路由复用会保留组件状态，这可能会带来另一个弊端；复用过程中组件的生命周期勾子不会重复触发，大部分情况下都能正常运行，但可能需要注意：
 
-- `OnDestroy` 可能会处理一些组件外部（例如：`body`）的样式等
-
-而在组件内部唯一能够知道是否由复用产生的组件激活状态，只能透过 `Router.events` 事件监听；有兴趣可以扩展阅读 [ngx-ueditor](https://github.com/cipchk/ngx-ueditor/blob/master/lib/src/ueditor.component.ts) 的解决办法。
+- `OnDestroy` 可能会处理一些组件外部（例如：`body`）的样式等，可以参考生命周期解决。
+- 开启 `debug` 模式后会在 `console` 很多信息这有助于分析路由复用的过程。
 
 ## API
 
@@ -93,6 +106,8 @@ export class DemoReuseTabEditComponent implements OnInit {
 
 参数 | 说明 | 类型 | 默认值
 ----|------|-----|------
+mode | 设置匹配模式 | `ReuseTabMatchMode` | `0`
+debug | 是否Debug模式 | `boolean` | `false`
 max | 允许最多复用多少个页面 | `number` | `10`
 excludes | 排除规则，限 `mode=URL` | `RegExp[]` | -
 allowClose | 允许关闭 | `boolean` | `true`
@@ -100,10 +115,3 @@ showCurrent | 总是显示当前页 | `boolean` | `true`
 fixed | 是否固定 | `boolean` | `true`
 change | 切换时回调 | `EventEmitter` | -
 close | 关闭回调 | `EventEmitter` | -
-
-## 如何删除？
-
-ng-alain 脚手架默认使用了 `reuse-tab` 组件，移除包含：
-
-- `shared.module.ts` 的 `AdReuseTabModule` 模块导入语句及 `providers` 定义
-- `layout.component.html` 的 `<reuse-tab></reuse-tab>` 组件模板定义
